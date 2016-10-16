@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using KSP.UI.Screens.Flight;
 
-namespace EVAEnhancements
+namespace EVAEnhancementsContinued
 {
     public class EVAEnhancements : PartModule
     {
@@ -13,12 +14,21 @@ namespace EVAEnhancements
         [KSPField(guiActive = true, guiName = "Profession", isPersistant = true)]
         string kerbalProfession = null;
 
-        [KSPField(guiName = "Jetpack", guiFormat = "P0", guiActive = true, isPersistant = true), UI_FloatRange(minValue = 0.01f, maxValue = 1f, stepIncrement = 0.01f)]
-        float jetPackPower = 1f;
-        float currentPower = 1f;
+        [KSPField(guiName = "Jetpack Power", guiFormat = "P0", guiActive = true, isPersistant = true), UI_FloatRange(minValue = .1f, maxValue = 1f, stepIncrement = 0.01f)]
+        public float jetPackPower = 1f;
+
+        [KSPField(guiName = "Precision Mode Power", guiFormat = "P0", guiActive = true, isPersistant = true), UI_FloatRange(minValue = 0.01f, maxValue = .5f, stepIncrement = 0.01f)]
+        public float precisionModePower = 0.1f;
+
+        [KSPField(guiName = "Precision Mode Power",  guiActive = true, isPersistant = true)]
+        public bool precisionControls = false;
+
+        public bool powerInited = false;
+
+        public float currentPower = 1f;
 
         bool rotateOnMove = false;
-        bool precisionControls = false;
+
 
         // Variables to keep track of original values
         float origLinPower = 0f;
@@ -44,10 +54,13 @@ namespace EVAEnhancements
             kerbalProfession = "Level " + myKerbal.experienceLevel.ToString();
 
             // Set default jet pack power
-            jetPackPower = settings.defaultJetPackPower;
-
-
-        }
+            if (!powerInited)
+            {
+                powerInited = true;
+                jetPackPower = settings.defaultJetPackPower;
+                precisionModePower = settings.defaultPrecisionModePower;
+            }
+        }       
 
         public override void OnUpdate()
         {
@@ -77,7 +90,7 @@ namespace EVAEnhancements
                 }
 
                 // Set pointer to KerbalEVA
-                if (eva == null)
+                if (eva == null || this.vessel != FlightGlobals.ActiveVessel)
                 {
                     eva = FlightGlobals.ActiveVessel.GetComponent<KerbalEVA>();
                 }
@@ -102,10 +115,12 @@ namespace EVAEnhancements
                         // Determine current jetpack power
                         if (precisionControls)
                         {
-                            currentPower = settings.precisionModePower;
+                           // precisionModePower = settings.defaultPrecisionModePower;
+                            currentPower = precisionModePower;
                         }
                         else
                         {
+                            //jetPackPower = settings.defaultJetPackPower;
                             currentPower = jetPackPower;
                         }
 
@@ -132,6 +147,10 @@ namespace EVAEnhancements
 
         }
 
+        KSP.UI.Screens.Flight.RCSDisplay rcsDisplay;
+        KSP.UI.Screens.Flight.ThrottleGauge throttleGauge;
+        KSP.UI.Screens.Flight.SASDisplay sasGauge;
+
         internal void LateUpdate()
         {
             // Only process is this is current vessel and the eva pointer was set previously
@@ -140,29 +159,50 @@ namespace EVAEnhancements
 
                 if (eva.JetpackDeployed)
                 {
+
                     // Set throttle to current jetpack power
-                    FlightUIController.fetch.thr.setValue(currentPower);
+                    if (throttleGauge == null)
+                        throttleGauge = UnityEngine.Object.FindObjectOfType<KSP.UI.Screens.Flight.ThrottleGauge>();
+                    if (throttleGauge != null)
+                        throttleGauge.gauge.SetValue(currentPower);
+                    // FlightUIController.fetch.thr.setValue(currentPower);
 
                     // Turn on RCS light for jetpack
-                    FlightUIController.fetch.rcs.renderer.material.mainTexture = FlightUIController.fetch.rcs.ledColors[1];
+                    if (rcsDisplay == null)
+                        rcsDisplay = UnityEngine.Object.FindObjectOfType<KSP.UI.Screens.Flight.RCSDisplay>();
+                    if (rcsDisplay != null)
+                        rcsDisplay.stateImage.SetState(1);
+                    //FlightUIController.fetch.rcs.renderer.material.mainTexture = FlightUIController.fetch.rcs.ledColors[1];
 
                     // Turn on SAS light for "EVA Rotate on Move"
-                    if (GameSettings.EVA_ROTATE_ON_MOVE)
-                    {
-                        FlightUIController.fetch.SAS.renderer.material.mainTexture = FlightUIController.fetch.SAS.ledColors[1];
-                    }
-                    else
-                    {
-                        FlightUIController.fetch.SAS.renderer.material.mainTexture = FlightUIController.fetch.SAS.ledColors[0];
-                    }
+                    if (sasGauge == null)
+                        sasGauge = UnityEngine.Object.FindObjectOfType<KSP.UI.Screens.Flight.SASDisplay>();
+                    if (sasGauge != null)
+                        if (GameSettings.EVA_ROTATE_ON_MOVE)
+                        {
+                            sasGauge.stateImage.SetState(1);
+                            //FlightUIController.fetch.SAS.renderer.material.mainTexture = FlightUIController.fetch.SAS.ledColors[1];
+                        }
+                        else
+                        {
+                            sasGauge.stateImage.SetState(0);
+                            //FlightUIController.fetch.SAS.renderer.material.mainTexture = FlightUIController.fetch.SAS.ledColors[0];
+                        }
 
                 }
                 else
                 {
                     // Set throttle to 0 and turn off lights
-                    FlightUIController.fetch.thr.setValue(0f);
-                    FlightUIController.fetch.rcs.renderer.material.mainTexture = FlightUIController.fetch.rcs.ledColors[0];
-                    FlightUIController.fetch.SAS.renderer.material.mainTexture = FlightUIController.fetch.SAS.ledColors[0];
+                    if (throttleGauge != null)
+                        throttleGauge.gauge.SetValue(0f);
+                    if (rcsDisplay != null)
+                        rcsDisplay.stateImage.SetState(0);
+                    if (sasGauge != null)
+                        sasGauge.stateImage.SetState(0);
+
+                    //FlightUIController.fetch.thr.setValue(0f);
+                    //FlightUIController.fetch.rcs.renderer.material.mainTexture = FlightUIController.fetch.rcs.ledColors[0];
+                    //FlightUIController.fetch.SAS.renderer.material.mainTexture = FlightUIController.fetch.SAS.ledColors[0];
                 }
 
 

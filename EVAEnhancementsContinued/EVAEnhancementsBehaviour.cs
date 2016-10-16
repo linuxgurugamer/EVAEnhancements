@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using KSP.UI.Screens.Flight;
 
-namespace EVAEnhancements
+
+namespace EVAEnhancementsContinued
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class EVAEnhancementsBehaviour : MonoBehaviour

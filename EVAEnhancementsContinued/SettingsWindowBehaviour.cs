@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using KSP.UI.Screens;
 
-namespace EVAEnhancements
+namespace EVAEnhancementsContinued
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class SettingsWindowBehaviour : MonoBehaviour
@@ -18,10 +19,10 @@ namespace EVAEnhancements
 
         internal void Awake()
         {
-            settings.Load();
-            settings.Save();
+            SettingsWrapper.Instance.gameSettings.Load();
+            SettingsWrapper.Instance.gameSettings.Save();
 
-            if (settings.useStockToolbar)
+            if (SettingsWrapper.Instance.gameSettings.useStockToolbar)
             {
                 GameEvents.onGUIApplicationLauncherReady.Add(OnGUIApplicationLauncherReady);
             }
@@ -60,7 +61,7 @@ namespace EVAEnhancements
         {
             if (settingsWindow.launcherButton == null && settings.useStockToolbar)
             {
-                settingsWindow.launcherButton = ApplicationLauncher.Instance.AddModApplication(showWindow, hideWindow, null, null, null, null, ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.MAPVIEW, SettingsWrapper.Instance.modStyle.GetImage("EVAEnhancements/textures/toolbar", 38, 38));
+                settingsWindow.launcherButton = ApplicationLauncher.Instance.AddModApplication(showWindow, hideWindow, null, null, null, null, ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.MAPVIEW, SettingsWrapper.Instance.modStyle.GetImage("EVAEnhancementsContinued/textures/toolbar", 38, 38));
             }
         }
 
@@ -72,20 +73,20 @@ namespace EVAEnhancements
                 if (ToolbarManager.ToolbarAvailable)
                 {
                     // Create button
-                    settingsWindow.blizzyButton = ToolbarManager.Instance.add("EVAEnhancements", "blizzyButton");
-                    settingsWindow.blizzyButton.TexturePath = "EVAEnhancements/textures/blizzyToolbar";
+                    settingsWindow.blizzyButton = ToolbarManager.Instance.add("EVAEnhancementsContinued", "blizzyButton");
+                    settingsWindow.blizzyButton.TexturePath = "EVAEnhancementsContinued/textures/blizzyToolbar";
                     settingsWindow.blizzyButton.ToolTip = "EVA Enhancements";
                     settingsWindow.blizzyButton.OnClick += (e) => toggleWindow();
                 }
                 else
                 {
                     // Blizzy Toolbar not available, fall back to stock launcher
-                    settings.useStockToolbar = true;
+                    SettingsWrapper.Instance.gameSettings.useStockToolbar = true;
                 }
             }
 
             // Load Application Launcher
-            if (settingsWindow.launcherButton == null && settings.useStockToolbar)
+            if (settingsWindow.launcherButton == null && SettingsWrapper.Instance.gameSettings.useStockToolbar)
             {
                 OnGUIApplicationLauncherReady();
             }
@@ -156,7 +157,7 @@ namespace EVAEnhancements
         internal void Update()
         {
             // Load Application Launcher
-            if (settingsWindow.launcherButton == null && settings.useStockToolbar)
+            if (settingsWindow.launcherButton == null && SettingsWrapper.Instance.gameSettings.useStockToolbar)
             {
                 OnGUIApplicationLauncherReady();
                 if (settingsWindow.showWindow)
@@ -166,7 +167,7 @@ namespace EVAEnhancements
             }
 
             // Destroy application launcher
-            if (settingsWindow.launcherButton != null && settings.useStockToolbar == false)
+            if (settingsWindow.launcherButton != null && SettingsWrapper.Instance.gameSettings.useStockToolbar == false)
             {
                 removeApplicationLauncher();
             }

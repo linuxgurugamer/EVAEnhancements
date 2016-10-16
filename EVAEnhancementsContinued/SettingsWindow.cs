@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using KSP.UI.Screens;
 
-namespace EVAEnhancements
+namespace EVAEnhancementsContinued
 {
     internal class SettingsWindow
     {
@@ -12,8 +13,9 @@ namespace EVAEnhancements
         internal IButton blizzyButton = null;
 
         internal bool showWindow;
-        internal Rect windowRect;
-        internal Rect dragRect;
+        internal static bool windowRectDefined = false;
+        internal static Rect windowRect;
+
         internal Vector2 scrollPos = new Vector2(0f, 0f);
         internal int windowId;
         internal Settings settings;
@@ -24,12 +26,17 @@ namespace EVAEnhancements
         private bool settingRollLeft = false;
         private bool settingRollRight = false;
 
+
+
+
         internal SettingsWindow()
         {
             settings = SettingsWrapper.Instance.gameSettings;
             modStyle = SettingsWrapper.Instance.modStyle;
             showWindow = false;
-            windowRect = new Rect((Screen.width - 250) / 2, (Screen.height - 300) / 2, 250, 300);
+            if (!windowRectDefined)
+                windowRect = new Rect((Screen.width - 300) / 1, (Screen.height - 300) / 2, 250, 300);
+            windowRectDefined = true;
             windowId = GUIUtility.GetControlID(FocusType.Passive);
         }
 
@@ -44,14 +51,13 @@ namespace EVAEnhancements
 
         internal void drawWindow(int id)
         {
+
+
             GUI.skin = modStyle.skin;
             GUILayout.BeginVertical();
             GUILayout.Label("EVA Enhancements - Settings", modStyle.guiStyles["titleLabel"]);
             GUILayout.EndVertical();
-            if (Event.current.type == EventType.Repaint)
-            {
-                dragRect = GUILayoutUtility.GetLastRect();
-            }
+            
             GUILayout.BeginVertical();
             scrollPos = GUILayout.BeginScrollView(scrollPos);
 
@@ -61,6 +67,17 @@ namespace EVAEnhancements
             {
                 settings.defaultJetPackPower = newJetPackPower;
                 settings.Save();
+                
+            }
+            GUILayout.Space(10f);
+
+            GUILayout.Label("Default Precision Jetpack Power: " + settings.defaultPrecisionModePower.ToString("P0"));
+            float newPrecisionJetPackPower = GUILayout.HorizontalSlider(settings.defaultPrecisionModePower, 0f, 1f);
+            if (newPrecisionJetPackPower != settings.defaultPrecisionModePower)
+            {
+                settings.defaultPrecisionModePower = newPrecisionJetPackPower;
+                settings.Save();
+
             }
             GUILayout.Space(10f);
 
@@ -180,7 +197,7 @@ namespace EVAEnhancements
                 launcherButton.SetFalse();
             }
 
-            GUI.DragWindow(dragRect);
+            GUI.DragWindow();
 
         }
 
